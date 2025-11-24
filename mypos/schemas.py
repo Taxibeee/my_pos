@@ -169,7 +169,7 @@ class PaymentLinkDetails(BaseModel):
     website: str = Field(..., description="Website address")
     account_number: str = Field(..., description="Account number which is related to this payment button")
     hide_quantity: bool = Field(..., description="If the quantity of items is hidden or not for customers")
-    expired_date: str = Field(..., description="Date until this payment link will be active")
+    expire_date: str = Field(..., description="Date until this payment link will be active")
 
 class PaymentRequest(BaseModel):
     code: str = Field(..., description="The code of the payment request")
@@ -199,8 +199,8 @@ class PaymentRequestDetails(BaseModel):
     status: PaymentRequestStatus = Field(..., description="Status of the payment request")
 
 class SettlementData(BaseModel):
-    currency: str = Field(..., description="Settlement currency")
-    account: Account = Field(..., description="Current associated account with this settlement currency")
+    settlement_currency: str = Field(..., description="Settlement currency")
+    account: Optional[Account] = Field(None, description="Current associated account with this settlement currency")
 
 class TransactionListResponse(BaseModel):
     transactions: List[Transaction] = Field(..., description="A list of transaction objects")
@@ -216,6 +216,18 @@ class DeviceListResponse(BaseModel):
 
 class DeviceTransactionListResponse(BaseModel):
     transactions: List[DeviceTransaction] = Field(..., description="A list of device transaction objects")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class PaymentButtonListResponse(BaseModel):
+    items: List[PaymentButton] = Field(..., description="A list of payment buttons")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class PaymentLinkListResponse(BaseModel):
+    items: List[PaymentLink] = Field(..., description="A list of payment links")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class PaymentRequestListResponse(BaseModel):
+    items: List[PaymentRequest] = Field(..., description="A list of payment requests")
     pagination: Pagination = Field(..., description="Information about the paginated results")
 
 class Device(BaseModel):
@@ -249,7 +261,7 @@ class DeviceDetail(BaseModel):
     receipt_address_preference: Optional[int] = Field(None, description="Receipt address preference")
 
 class ReceiptDetail(BaseModel):
-    is_declined: bool = Field(..., description="A flag to determine whether the transactions has been declined")
+    is_declined: int = Field(..., description="A flag to determine whether the transactions has been declined")
     receipt_layout_version: int = Field(..., description="A enumrator of the layout version of the receipt")
     exchange_rate: Optional[str] = Field(None, description="The exchange rate if such has been applied")
     date: str = Field(..., description="The date of the transactions in format YYYY-MM-DD")
@@ -260,18 +272,18 @@ class ReceiptDetail(BaseModel):
     merchant_name: str = Field(..., description="The name of the merchant the POS device is related to")
     address_line_1: str = Field(..., description="The address printed on the first line")
     address_line_2: str = Field(..., description="The address printed on the second line")
-    resp_code: str = Field(..., description="The response code from the POS device")
+    resp_code: Optional[str] = Field(None, description="The response code from the POS device")
     reference_number: str = Field(..., description="The reference number of the transaction")
     application_preferred_name: str = Field(..., description="The name of the card scheme application")
     installment_type: Optional[str] = Field(None, description="The type of the installment")
     installment_number: Optional[str] = Field(None, description="The number of the installment")
     installment_interest_rate: Optional[str] = Field(None, description="Installment interest rate")
-    installment_first_amount: Optional[float] = Field(None, description="Installment first amount")
-    installment_subseq_amount: Optional[float] = Field(None, description="Installment subseq amount")
-    installment_anuual_perc_rate: Optional[float] = Field(None, description="Installment annual percentage rate")
-    installment_fee_rate: Optional[float] = Field(None, description="Installment fee rate")
-    installment_total_amount: Optional[float] = Field(None, description="Installment total amount")
-    transaction_preauth_code: Optional[str] = Field(None, description="Installment pre-authorisation code")
+    installment_first_amount: Optional[str] = Field(None, description="Installment first amount")
+    installment_subseq_amount: Optional[str] = Field(None, description="Installment subseq amount")
+    installment_annual_perc_rate: Optional[str] = Field(None, description="Installment annual percentage rate")
+    installment_fee_rate: Optional[str] = Field(None, description="Installment fee rate")
+    installment_total_amount: Optional[str] = Field(None, description="Installment total amount")
+    transaction_preauth_code: str = Field(..., description="Installment pre-authorisation code")
     card_scheme: str = Field(..., description="The scheme of the used credit/debit card")
     pan: str = Field(..., description="The masked PAN of the card in format XXXX-XXXX-XXXX-1234")
     emboss_name: str = Field(..., description="The name on the card")
@@ -281,14 +293,15 @@ class ReceiptDetail(BaseModel):
     rrn: str = Field(..., description="The RRN of the transaction")
     aid: str = Field(..., description="The application identifier")
     amount_tip: Optional[str] = Field(None, description="The tip amount")
-    amount_total: str = Field(..., description="The total amount of the transactions")
-    operator_code: Optional[str] = Field(None, description="The operator code")
+    amount_total: Optional[str] = Field(None, description="The total amount of the transactions")
+    operator_code: str = Field(..., description="The operator code")
     dcc_amount: Optional[str] = Field(None, description="The DCC amount")
     dcc_currency: Optional[str] = Field(None, description="The DCC currency")
     tran_type: str = Field(..., description="The type of the transaction")
-    sign_row_1: Optional[str] = Field(None, description="The first signature row to printed")
-    sign_row_2: Optional[str] = Field(None, description="The second signature row to be printed")
-    sign_row_3: Optional[str] = Field(None, description="The third signature tow to be printed")
+    sign_row_1: str = Field(..., description="The first signature row to printed")
+    sign_row_2: str = Field(..., description="The second signature row to be printed")
+    sign_row_3: str = Field(..., description="The third signature tow to be printed")
+    exchange_rate_translation: Optional[str] = Field(None, description="Exchange rate translation")
     tran_status: str = Field(..., description="The status of the transaction")
     receipt_footer_row_1: Optional[str] = Field(None, description="The first row of the custom footer")
     receipt_footer_row_2: Optional[str] = Field(None, description="The second row of the custom footer")
@@ -345,6 +358,10 @@ class Subscription(BaseModel):
     event: str = Field(..., description="The event name")
     filter: Optional[dict] = Field(None, description="The filter for the subscription")
     hook: Webhook = Field(..., description="The webhook object")
+
+class SubscriptionListResponse(BaseModel):
+    subscriptions: List[Subscription] = Field(..., description="A list of subscription objects")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
 
 class Notification(BaseModel):
     event: str = Field(..., description="Event's name")

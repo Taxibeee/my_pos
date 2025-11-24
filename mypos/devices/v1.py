@@ -1,14 +1,12 @@
 from typing import Optional
 from datetime import datetime
-from ...schemas import DeviceListResponse, DeviceTransactionListResponse, DeviceDetail
+from ...schemas import DeviceListResponse, DeviceTransactionListResponse, DeviceDetail, ReceiptDetail
 
 class DevicesV1:
     def __init__(self, client):
         self.client = client
-        # Devices API uses a different base URL structure usually, but based on previous code
-        # we need to replace 'transactions' with 'devices' in the base URL.
-        # We'll handle this by passing the modified base URL to the request method.
-        self.base_url = client.api_base_url.replace('transactions', 'devices')
+        # Devices API uses a different base URL
+        self.base_url = "https://devices-api.mypos.com"
 
     def list(
         self, 
@@ -90,3 +88,20 @@ class DevicesV1:
             base_url=self.base_url
         )
         return DeviceDetail(**response_data)
+
+    def get_receipt_details(self, payment_reference: str) -> ReceiptDetail:
+        """
+        Get receipt details for a transaction (v1).
+
+        Args:
+            payment_reference: The unique reference of the transaction
+
+        Returns:
+            ReceiptDetail: Receipt details object
+        """
+        response_data = self.client.request(
+            "GET",
+            f"/v1/devices/receipt/{payment_reference}",
+            base_url=self.base_url
+        )
+        return ReceiptDetail(**response_data)

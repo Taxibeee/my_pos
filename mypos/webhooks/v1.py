@@ -1,5 +1,5 @@
 from typing import Optional, List
-from ...schemas import Webhook, WebhookListResponse, EventListResponse, Subscription, NotificationListResponse
+from ...schemas import Webhook, WebhookListResponse, EventListResponse, Subscription, NotificationListResponse, SubscriptionListResponse, Notification
 import json
 
 class WebhooksV1:
@@ -255,3 +255,37 @@ class WebhooksV1:
             base_url=self.base_url
         )
         return NotificationListResponse(**response_data)
+
+    def list_subscriptions(self, page: Optional[int] = 1, size: Optional[int] = 20) -> SubscriptionListResponse:
+        """
+        List current subscriptions.
+        """
+        response_data = self.client.request(
+            "GET", 
+            "/v1/subscriptions", 
+            params={"page": page, "size": size},
+            base_url=self.base_url
+        )
+        return SubscriptionListResponse(**response_data)
+
+    def get_subscription(self, subscription_id: str) -> Subscription:
+        """
+        Get a single subscription by ID.
+        """
+        response_data = self.client.request(
+            "GET", 
+            f"/v1/subscriptions/{subscription_id}",
+            base_url=self.base_url
+        )
+        return Subscription(**response_data["subscription"])
+
+    def request_sandbox_notification(self, subscription_id: str) -> Notification:
+        """
+        Request sandbox event notification.
+        """
+        response_data = self.client.request(
+            "POST", 
+            f"/v1/subscriptions/{subscription_id}/fake",
+            base_url=self.base_url
+        )
+        return Notification(**response_data["notification"])
