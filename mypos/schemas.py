@@ -60,16 +60,16 @@ class PaymentRequestStatus(int, Enum):
     CANCELLED = 6
 
 class Transaction(BaseModel):
-    id: int = Field(..., description="The unique id of the transaction")
+    id: Optional[int] = Field(None, description="The unique id of the transaction")
     payment_reference: str = Field(..., description="A unique reference of the transactions")
-    transaction_type: TransactionType = Field(..., description="The type of the transaction")
-    transaction_amount: str = Field(..., description="The amount of the transaction after possible conversions")
+    transaction_type: Optional[TransactionType] = Field(None, description="The type of the transaction")
+    transaction_amount: float = Field(..., description="The amount of the transaction")
     transaction_currency: str = Field(..., description="The currency of the receiving account. 3 character ISO 4217 code")
-    original_amount: str = Field(..., description="The amount for which the transaction was initiated")
+    original_amount: float = Field(..., description="The amount for which the transaction was initiated")
     original_currency: str = Field(..., description="The currency in which the transaction was initiated. 3 character ISO 4217 code")
-    sign: str = Field(..., description="Permitted codes are 'booked', 'pending' and 'both'")
+    sign: str = Field(..., description="Permitted codes are 'booked', 'pending' and 'both' or 'C'/'D'")
     date: str = Field(..., description="The date of the transaction")
-    operation_type: str = Field(..., description="The type of the operation")
+    operation_type: Optional[str] = Field(None, description="The type of the operation")
     reference_number: Optional[str] = Field(None, description="An optional custom reference number set for POS transaction")
     reference_number_type: Optional[ReferenceNumberType] = Field(None, description="Type of reference number")
     terminal_id: Optional[str] = Field(None, description="The TID of the POS device")
@@ -80,13 +80,19 @@ class Transaction(BaseModel):
     pan: Optional[str] = Field(None, description="Last four digits of the card number")
 
 class TransactionDetail(BaseModel):
-    title: str = Field(..., description="The type of the detail or the title of a section of details")
+    label: str = Field(..., description="The type of the detail or the title of a section of details")
     value: str = Field(..., description="The value of the detail")
+
+class TransactionDetailsResponse(BaseModel):
+    details: List[TransactionDetail] = Field(..., description="A list of transaction detail objects")
 
 class TransactionDetails(BaseModel):
     reference: str = Field(..., description="The 'payment_reference' of the transaction")
     general: Dict[str, Any] = Field(..., description="Contains general information of the transaction")
     details: List[TransactionDetail] = Field(..., description="A list with details related to the transaction")
+
+class MultipleTransactionDetailsResponse(BaseModel):
+    transactions_details: List[TransactionDetails] = Field(..., description="An array of transaction details")
 
 class Account(BaseModel):
     account_number: str = Field(..., description="A unique identifier of the account")
@@ -97,7 +103,8 @@ class Account(BaseModel):
 
 class Pagination(BaseModel):
     page: int = Field(..., description="The page number")
-    page_size: int = Field(..., description="The number of items per page")
+    page_size: Optional[int] = Field(None, description="The number of items per page (v1.1)")
+    size: Optional[int] = Field(None, description="The number of items per page (v1.0)")
     total: int = Field(..., description="Total number of records available")
 
 class Language(BaseModel):
@@ -197,4 +204,156 @@ class SettlementData(BaseModel):
 
 class TransactionListResponse(BaseModel):
     transactions: List[Transaction] = Field(..., description="A list of transaction objects")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class AccountListResponse(BaseModel):
+    accounts: List[Account] = Field(..., description="A list of account objects")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class DeviceListResponse(BaseModel):
+    devices: List[Device] = Field(..., description="A list of device objects")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class DeviceTransactionListResponse(BaseModel):
+    transactions: List[DeviceTransaction] = Field(..., description="A list of device transaction objects")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class Device(BaseModel):
+    terminal_id: str = Field(..., description="A unique number of the device")
+    serial_number: str = Field(..., description="The serial number of the device")
+    model: str = Field(..., description="The model of the device")
+
+class DeviceDetail(BaseModel):
+    last_transaction_date: str = Field(..., description="The date of the last transaction in format 'YYYY-MM-DD HH:mm:ss'")
+    terminal_id: str = Field(..., description="The unique terminal identifier of the POS device")
+    terminal_name: str = Field(..., description="The custom name of the POS device")
+    serial_number: str = Field(..., description="The serial number of the POS device")
+    model: str = Field(..., description="The model of the POS device")
+    outlet_id: int = Field(..., description="The ID of the outlet to which the POS devices is assigned")
+    outlet_name: str = Field(..., description="The name of the outlet to which the POS devices is assigned")
+    device_currency: str = Field(..., description="The currency in which the POS device is operating in")
+    status: str = Field(..., description="The status of the device")
+    transactions_count: int = Field(..., description="The number of transactions processed on this POS device")
+    settlement_account_number: str = Field(..., description="The number of the settlement account to which the POS device is assigned to")
+    settlement_account_name: str = Field(..., description="The name of the settlement account to which the POS device is assigned to")
+    settlement_account_currency: str = Field(..., description="The currency of the settlement account to which the POS device is assigned to")
+    billing_descriptor: str = Field(..., description="The billing descriptor assigned to the POS device")
+    receipt_footer_row_1: str = Field(..., description="The first row of the custom footer printed in the receipt")
+    receipt_footer_row_2: str = Field(..., description="The second row of the custom footer printed in the receipt")
+    forbidden_preauthorization: int = Field(..., description="A flag specifying wheter Pre-Authorizations are forbidden for this POS device")
+    forbidden_moto: int = Field(..., description="A flag specifying wheter MOTO transactions are forbidden for this POS device")
+    forbidden_reversal: int = Field(..., description="A flag specifying wheter reversal transactions are forbidden for this POS device")
+    forbidden_refund: int = Field(..., description="A flag specifying wheter refund transactions are forbidden for this POS device")
+    forbidden_topup: int = Field(..., description="A flag specifying wheter top-up transactions are forbidden for this POS device")
+    card_topup_enabled: Optional[int] = Field(None, description="Flag for card topup enabled")
+    receipt_address_preference: Optional[int] = Field(None, description="Receipt address preference")
+
+class ReceiptDetail(BaseModel):
+    is_declined: bool = Field(..., description="A flag to determine whether the transactions has been declined")
+    receipt_layout_version: int = Field(..., description="A enumrator of the layout version of the receipt")
+    exchange_rate: Optional[str] = Field(None, description="The exchange rate if such has been applied")
+    date: str = Field(..., description="The date of the transactions in format YYYY-MM-DD")
+    time: str = Field(..., description="The time of the transaction in format HH:mm:ss")
+    stan: str = Field(..., description="The stan of the transactions")
+    terminal_id: str = Field(..., description="The TID of the POS device")
+    merchant_id: str = Field(..., description="The ID of the merchant the POS device is related to")
+    merchant_name: str = Field(..., description="The name of the merchant the POS device is related to")
+    address_line_1: str = Field(..., description="The address printed on the first line")
+    address_line_2: str = Field(..., description="The address printed on the second line")
+    resp_code: str = Field(..., description="The response code from the POS device")
+    reference_number: str = Field(..., description="The reference number of the transaction")
+    application_preferred_name: str = Field(..., description="The name of the card scheme application")
+    installment_type: Optional[str] = Field(None, description="The type of the installment")
+    installment_number: Optional[str] = Field(None, description="The number of the installment")
+    installment_interest_rate: Optional[str] = Field(None, description="Installment interest rate")
+    installment_first_amount: Optional[float] = Field(None, description="Installment first amount")
+    installment_subseq_amount: Optional[float] = Field(None, description="Installment subseq amount")
+    installment_anuual_perc_rate: Optional[float] = Field(None, description="Installment annual percentage rate")
+    installment_fee_rate: Optional[float] = Field(None, description="Installment fee rate")
+    installment_total_amount: Optional[float] = Field(None, description="Installment total amount")
+    transaction_preauth_code: Optional[str] = Field(None, description="Installment pre-authorisation code")
+    card_scheme: str = Field(..., description="The scheme of the used credit/debit card")
+    pan: str = Field(..., description="The masked PAN of the card in format XXXX-XXXX-XXXX-1234")
+    emboss_name: str = Field(..., description="The name on the card")
+    amount: str = Field(..., description="The transaction amount")
+    currency: str = Field(..., description="The transaction currency")
+    auth_code: str = Field(..., description="The authorisation code")
+    rrn: str = Field(..., description="The RRN of the transaction")
+    aid: str = Field(..., description="The application identifier")
+    amount_tip: Optional[str] = Field(None, description="The tip amount")
+    amount_total: str = Field(..., description="The total amount of the transactions")
+    operator_code: Optional[str] = Field(None, description="The operator code")
+    dcc_amount: Optional[str] = Field(None, description="The DCC amount")
+    dcc_currency: Optional[str] = Field(None, description="The DCC currency")
+    tran_type: str = Field(..., description="The type of the transaction")
+    sign_row_1: Optional[str] = Field(None, description="The first signature row to printed")
+    sign_row_2: Optional[str] = Field(None, description="The second signature row to be printed")
+    sign_row_3: Optional[str] = Field(None, description="The third signature tow to be printed")
+    tran_status: str = Field(..., description="The status of the transaction")
+    receipt_footer_row_1: Optional[str] = Field(None, description="The first row of the custom footer")
+    receipt_footer_row_2: Optional[str] = Field(None, description="The second row of the custom footer")
+    pl_card_balance: Optional[str] = Field(None, description="The balance of the private label card")
+    pl_card_balance_currency: Optional[str] = Field(None, description="The currency of the private label card")
+
+class DeviceTransaction(BaseModel):
+    terminal_id: str = Field(..., description="The unique terminal identifier of the POS device")
+    terminal_name: str = Field(..., description="The custom name of the POS device")
+    outlet_name: str = Field(..., description="The name of the outlet to which the POS devices is assigned")
+    amount: float = Field(..., description="The amount of the transaction")
+    currency: str = Field(..., description="The currency of the receiving account. 3 character ISO 4217 code")
+    fee: float = Field(..., description="The merhcnat fee for the transaction")
+    pan: str = Field(..., description="The last 4 digits of the credit/debit card PAN")
+    card_scheme: str = Field(..., description="The scheme of the presented debit/credit used for the transaction")
+    rrn: str = Field(..., description="The RRN of the transcations")
+    stan: str = Field(..., description="The stan of the transaction")
+    date: str = Field(..., description="The date and time on which the transactions ocurred in format 'YYYY-MM-DD HH:mm:ss'")
+    settlement_date: str = Field(..., description="The settlement date of the transaction in format 'YYYY-MM-DD HH:mm:ss'")
+    settlement_amount: str = Field(..., description="The settled transaction amount")
+    settlement_currency: str = Field(..., description="The currency of the settlement account")
+    tran_status: str = Field(..., description="The status of the transaction")
+    payment_status: str = Field(..., description="The status of the payment")
+    payment_reference: str = Field(..., description="The payment reference of successfully settled transactions")
+    reference_number: Optional[str] = Field(None, description="The reference number of a transaction. Can be filtered by custom client reference")
+
+class WebhookEvent(BaseModel):
+    id: str = Field(..., description="The ID of the event")
+    name: str = Field(..., description="The name of the event")
+
+class Webhook(BaseModel):
+    id: str = Field(..., description="The unique ID of the webhook")
+    created_on: str = Field(..., description="Creation date")
+    is_active: bool = Field(..., description="Status of the webhook")
+    payload_url: str = Field(..., description="The payload URL")
+    secret: str = Field(..., description="The secret used to sign the callback")
+    events: Optional[List[WebhookEvent]] = Field(None, description="List of events subscribed to")
+
+class WebhookListResponse(BaseModel):
+    webhooks: List[Webhook] = Field(..., description="A list of webhook objects")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class Event(BaseModel):
+    id: str = Field(..., description="The ID of the event")
+    name: str = Field(..., description="The name of the event")
+
+class EventListResponse(BaseModel):
+    events: List[Event] = Field(..., description="A list of event objects")
+    pagination: Pagination = Field(..., description="Information about the paginated results")
+
+class Subscription(BaseModel):
+    id: str = Field(..., description="The ID of the subscription")
+    created_on: str = Field(..., description="Creation date")
+    event: str = Field(..., description="The event name")
+    filter: Optional[dict] = Field(None, description="The filter for the subscription")
+    hook: Webhook = Field(..., description="The webhook object")
+
+class Notification(BaseModel):
+    event: str = Field(..., description="Event's name")
+    payload: dict = Field(..., description="Payload")
+    sent_on: str = Field(..., description="Sent on")
+    response_code: int = Field(..., description="Response status")
+    retry_count: int = Field(..., description="Retry count")
+    url: str = Field(..., description="URL")
+
+class NotificationListResponse(BaseModel):
+    notifications: List[Notification] = Field(..., description="A list of notification objects")
     pagination: Pagination = Field(..., description="Information about the paginated results")
