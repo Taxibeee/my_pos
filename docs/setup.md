@@ -7,7 +7,7 @@ You can install the package using `pip` or other package managers like `uv`.
 ### Using pip
 
 ```bash
-pip install git+https://github.com/your-repo/mypos.git
+pip install git+https://github.com/Taxibeee/mypos.git
 ```
 
 ### Using uv
